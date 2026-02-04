@@ -9,6 +9,8 @@ import os
 import zipfile
 from datetime import datetime
 import secrets
+import atexit
+import glob
 
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(32)
@@ -162,7 +164,52 @@ def init_problems():
     
     db.session.commit()
 
+def cleanup_temp_files():
+    """임시 ZIP 파일들 정리"""
+    try:
+        zip_files = glob.glob(os.path.join(os.path.dirname(__file__), '*_problems.zip'))
+        for zip_file in zip_files:
+            if os.path.exists(zip_file):
+                os.remove(zip_file)
+                app.logger.info(f'Cleaned up temporary file: {zip_file}')
+    except Exception as e:
+        app.logger.error(f'Error cleaning up temp files: {e}')
+
+def find_executable_file(category, problem_num):
+    """실행 파일을 여러 경로에서 찾기"""
+    base_dir = os.path.dirname(__file__)
+    
+    possible_paths = [
+        # 현재 폴더 내
+        os.path.join(base_dir, 'compiled_executables', category, f'problem_{problem_num}.exe'),
+        # 상위 폴더의 reversing_challenges
+        os.path.join(base_dir, '..', 'reversing_challenges', 'compiled_executables', category, f'problem_{problem_num}.exe'),
+        # 같은 레벨의 reversing_challenges
+        os.path.join(base_dir, 'reversing_challenges', 'compiled_executables', category, f'problem_{problem_num}.exe'),
+        # 절대 경로로 찾기
+        os.path.join(os.path.dirname(base_dir), 'reversing_challenges', 'compiled_executables', category, f'problem_{problem_num}.exe'),
+        # 현재 작업 디렉토리 기준
+        os.path.join(os.getcwd(), 'reversing_challenges', 'compiled_executables', category, f'problem_{problem_num}.exe'),
+        # 상대 경로 (다양한 시도)
+        f'../reversing_challenges/compiled_executables/{category}/problem_{problem_num}.exe',
+        f'reversing_challenges/compiled_executables/{category}/problem_{problem_num}.exe',
+        f'compiled_executables/{category}/problem_{problem_num}.exe'
+    ]
+    
+    for path in possible_paths:
+        abs_path = os.path.abspath(path)
+        if os.path.exists(abs_path):
+            app.logger.info(f'Found executable: {abs_path}')
+            return abs_path
+    
+    app.logger.error(f'Executable not found for {category}/problem_{problem_num}.exe. Tried paths: {possible_paths}')
+    return None
+
 def create_tables():
+    """데이터베이스 테이블 생성 및 초기 데이터 설정"""
+    with app.app_context():
+        db.create_all()
+        init_problems()
     """데이터베이스 테이블 생성 및 초기 데이터 설정"""
     with app.app_context():
         db.create_all()
@@ -368,11 +415,11 @@ def download_problem(problem_id):
     category = parts[0]  # easy, medium, hard
     problem_num = parts[1]  # 01, 02, ..., 10
     
-    # 미리 컴파일된 .exe 파일 경로 (같은 폴더 내)
-    exe_file_path = f'compiled_executables/{category}/problem_{problem_num}.exe'
+    # 실행 파일 찾기
+    exe_file_path = find_executable_file(category, problem_num)
     
-    if not os.path.exists(exe_file_path):
-        flash('문제 파일을 찾을 수 없습니다.', 'error')
+    if not exe_file_path:
+        flash(f'문제 파일을 찾을 수 없습니다. ({problem_id})', 'error')
         return redirect(url_for('index'))
     
     try:
@@ -397,10 +444,15 @@ def download_all_problems(category):
         return redirect(url_for('index'))
     
     try:
-        # 임시 ZIP 파일 생성
-        zip_path = f'temp/{category}_problems.zip'
-        os.makedirs('temp', exist_ok=True)
+        # 임시 ZIP 파일 생성 (현재 디렉토리에)
+        zip_filename = f'{category}_problems.zip'
+        zip_path = os.path.join(os.path.dirname(__file__), zip_filename)
         
+        # 기존 ZIP 파일이 있으면 삭제
+        if os.path.exists(zip_path):
+            os.remove(zip_path)
+        
+        files_added = 0
         with zipfile.ZipFile(zip_path, 'w') as zipf:
             # 해당 카테고리의 모든 문제 추가
             problems = Problem.query.filter_by(category=category, is_active=True).all()
@@ -411,12 +463,38 @@ def download_all_problems(category):
                 if len(parts) == 2:
                     problem_num = parts[1]  # 01, 02, ..., 10
                     
-                    # 미리 컴파일된 .exe 파일 경로 (같은 폴더 내)
-                    exe_path = f'compiled_executables/{category}/problem_{problem_num}.exe'
+                    # 실행 파일 찾기
+                    exe_path = find_executable_file(category, problem_num)
                     
-                    if os.path.exists(exe_path):
+                    if exe_path:
                         # .exe 파일을 ZIP에 추가
                         zipf.write(exe_path, f'{problem.problem_id}.exe')
+                        files_added += 1
+                        app.logger.info(f'Added {problem.problem_id}.exe to ZIP from {exe_path}')
+                    else:
+                        app.logger.warning(f'File not found for {problem.problem_id}')
+        
+        if files_added == 0:
+            flash(f'{category} 카테고리의 문제 파일을 찾을 수 없습니다.', 'error')
+            if os.path.exists(zip_path):
+                os.remove(zip_path)
+            return redirect(url_for('index'))
+        
+        app.logger.info(f'Created ZIP with {files_added} files: {zip_path}')
+        
+        # 다운로드 후 파일 정리를 위한 콜백 함수 등록
+        def cleanup_after_send():
+            try:
+                if os.path.exists(zip_path):
+                    os.remove(zip_path)
+                    app.logger.info(f'Cleaned up ZIP file: {zip_path}')
+            except Exception as e:
+                app.logger.error(f'Error cleaning up ZIP file {zip_path}: {e}')
+        
+        # 응답 후 정리 작업 예약
+        import threading
+        timer = threading.Timer(30.0, cleanup_after_send)  # 30초 후 정리
+        timer.start()
         
         return send_file(zip_path, as_attachment=True, 
                         download_name=f'{category}_reversing_problems.zip')
@@ -450,6 +528,9 @@ def internal_error(error):
     return render_template('error.html', error_code=500, error_message='서버 내부 오류가 발생했습니다.'), 500
 
 if __name__ == '__main__':
+    # 앱 종료 시 임시 파일 정리
+    atexit.register(cleanup_temp_files)
+    
     # 데이터베이스 초기화
     create_tables()
     
