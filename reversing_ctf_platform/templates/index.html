@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block title %}홈 - Dangel Reversing{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="text-center mb-4">
+            <i class="fas fa-bug"></i> Dangel Reversing Challenge
+        </h1>
+        <p class="text-center text-muted">
+            리버스 엔지니어링 문제를 해결하고 플래그를 찾아보세요!
+        </p>
+        <div class="text-center mb-4">
+            <span class="badge bg-primary fs-6">현재 점수: {{ user.score }}점</span>
+            <span class="badge bg-info fs-6 ms-2">해결한 문제: {{ solved_problems|length }}개</span>
+        </div>
+    </div>
+</div>
+
+<!-- Easy Problems -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="difficulty-easy mb-0">
+                <i class="fas fa-star"></i> Easy (50점)
+            </h3>
+            <a href="{{ url_for('download_all_problems', category='easy') }}" class="btn btn-outline-success btn-sm">
+                <i class="fas fa-download"></i> 전체 다운로드
+            </a>
+        </div>
+        <div class="row">
+            {% for problem in problems.easy %}
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card problem-card {% if problem.problem_id in solved_problems %}solved{% else %}unsolved{% endif %}">
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            {% if problem.problem_id in solved_problems %}
+                                <i class="fas fa-check-circle"></i>
+                            {% else %}
+                                <i class="fas fa-lock"></i>
+                            {% endif %}
+                            {{ problem.title }}
+                        </h6>
+                        <p class="card-text small">{{ problem.description }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">{{ problem.points }}점</small>
+                            <div>
+                                <a href="{{ url_for('download_problem', problem_id=problem.problem_id) }}" 
+                                   class="btn btn-sm btn-outline-secondary me-1" title="문제 파일 다운로드">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                                <button class="btn btn-sm btn-primary" onclick="showFlagModal('{{ problem.problem_id }}', '{{ problem.title }}')">
+                                    {% if problem.problem_id in solved_problems %}해결됨{% else %}도전{% endif %}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Medium Problems -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="difficulty-medium mb-0">
+                <i class="fas fa-star"></i><i class="fas fa-star"></i> Medium (100점)
+            </h3>
+            <a href="{{ url_for('download_all_problems', category='medium') }}" class="btn btn-outline-warning btn-sm">
+                <i class="fas fa-download"></i> 전체 다운로드
+            </a>
+        </div>
+        <div class="row">
+            {% for problem in problems.medium %}
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card problem-card {% if problem.problem_id in solved_problems %}solved{% else %}unsolved{% endif %}">
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            {% if problem.problem_id in solved_problems %}
+                                <i class="fas fa-check-circle"></i>
+                            {% else %}
+                                <i class="fas fa-lock"></i>
+                            {% endif %}
+                            {{ problem.title }}
+                        </h6>
+                        <p class="card-text small">{{ problem.description }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">{{ problem.points }}점</small>
+                            <div>
+                                <a href="{{ url_for('download_problem', problem_id=problem.problem_id) }}" 
+                                   class="btn btn-sm btn-outline-secondary me-1" title="문제 파일 다운로드">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                                <button class="btn btn-sm btn-primary" onclick="showFlagModal('{{ problem.problem_id }}', '{{ problem.title }}')">
+                                    {% if problem.problem_id in solved_problems %}해결됨{% else %}도전{% endif %}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Hard Problems -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="difficulty-hard mb-0">
+                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i> Hard (200점)
+            </h3>
+            <a href="{{ url_for('download_all_problems', category='hard') }}" class="btn btn-outline-danger btn-sm">
+                <i class="fas fa-download"></i> 전체 다운로드
+            </a>
+        </div>
+        <div class="row">
+            {% for problem in problems.hard %}
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card problem-card {% if problem.problem_id in solved_problems %}solved{% else %}unsolved{% endif %}">
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            {% if problem.problem_id in solved_problems %}
+                                <i class="fas fa-check-circle"></i>
+                            {% else %}
+                                <i class="fas fa-lock"></i>
+                            {% endif %}
+                            {{ problem.title }}
+                        </h6>
+                        <p class="card-text small">{{ problem.description }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">{{ problem.points }}점</small>
+                            <div>
+                                <a href="{{ url_for('download_problem', problem_id=problem.problem_id) }}" 
+                                   class="btn btn-sm btn-outline-secondary me-1" title="문제 파일 다운로드">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                                <button class="btn btn-sm btn-primary" onclick="showFlagModal('{{ problem.problem_id }}', '{{ problem.title }}')">
+                                    {% if problem.problem_id in solved_problems %}해결됨{% else %}도전{% endif %}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Flag Submission Modal -->
+<div class="modal fade" id="flagModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">플래그 제출</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="flagForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <input type="hidden" id="problemId" name="problem_id">
+                    <div class="mb-3">
+                        <label for="flagInput" class="form-label">플래그를 입력하세요:</label>
+                        <input type="text" class="form-control" id="flagInput" name="flag" placeholder="FLAG{...}" required>
+                        <div class="form-text">플래그는 FLAG{...} 형식입니다.</div>
+                    </div>
+                </form>
+                <div id="submitResult"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-primary" onclick="submitFlag()">제출</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showFlagModal(problemId, problemTitle) {
+    document.getElementById('problemId').value = problemId;
+    document.getElementById('modalTitle').textContent = problemTitle + ' - 플래그 제출';
+    document.getElementById('flagInput').value = '';
+    document.getElementById('submitResult').innerHTML = '';
+    
+    var modal = new bootstrap.Modal(document.getElementById('flagModal'));
+    modal.show();
+}
+
+function submitFlag() {
+    var formData = new FormData(document.getElementById('flagForm'));
+    
+    fetch('/submit', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        var resultDiv = document.getElementById('submitResult');
+        if (data.success) {
+            resultDiv.innerHTML = '<div class="alert alert-success">' + data.message + '</div>';
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+        } else {
+            resultDiv.innerHTML = '<div class="alert alert-danger">' + data.message + '</div>';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('submitResult').innerHTML = '<div class="alert alert-danger">오류가 발생했습니다.</div>';
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}스코어보드 - Dangel Reversing{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="text-center mb-4">
+            <i class="fas fa-trophy"></i> 스코어보드
+        </h1>
+        <p class="text-center text-muted mb-4">
+            현재 순위를 확인해보세요!
+        </p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="table-responsive scoreboard-table">
+            <table class="table table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th scope="col" class="text-center" style="width: 80px;">
+                            <i class="fas fa-medal"></i> 순위
+                        </th>
+                        <th scope="col">
+                            <i class="fas fa-user"></i> 사용자명
+                        </th>
+                        <th scope="col" class="text-center">
+                            <i class="fas fa-star"></i> 점수
+                        </th>
+                        <th scope="col" class="text-center">
+                            <i class="fas fa-check-circle"></i> 해결
+                        </th>
+                        <th scope="col" class="text-center">
+                            <i class="fas fa-calendar"></i> 가입일
+                        </th>
+                        <th scope="col" class="text-center">
+                            <i class="fas fa-clock"></i> 최근 로그인
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in scoreboard %}
+                    <tr class="{% if loop.index == 1 %}rank-1{% elif loop.index == 2 %}rank-2{% elif loop.index == 3 %}rank-3{% endif %}">
+                        <td class="text-center fw-bold">
+                            {% if loop.index == 1 %}
+                                <i class="fas fa-crown text-warning"></i> 1
+                            {% elif loop.index == 2 %}
+                                <i class="fas fa-medal text-secondary"></i> 2
+                            {% elif loop.index == 3 %}
+                                <i class="fas fa-medal text-warning"></i> 3
+                            {% else %}
+                                {{ loop.index }}
+                            {% endif %}
+                        </td>
+                        <td class="fw-bold">
+                            {% if loop.index <= 3 %}
+                                <i class="fas fa-star text-warning me-2"></i>
+                            {% endif %}
+                            {{ user.username }}
+                        </td>
+                        <td class="text-center fw-bold">
+                            <span class="badge bg-primary rounded-pill">
+                                {{ user.score }}점
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-success rounded-pill">
+                                {{ user.solved_count }}개
+                            </span>
+                        </td>
+                        <td class="text-center text-muted">
+                            {{ user.join_date }}
+                        </td>
+                        <td class="text-center text-muted">
+                            {{ user.last_login }}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">
+                            <i class="fas fa-users fa-2x mb-2"></i>
+                            <br>
+                            아직 등록된 사용자가 없습니다.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% if scoreboard %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="row text-center">
+            <div class="col-md-3">
+                <div class="card border-0 bg-light">
+                    <div class="card-body">
+                        <i class="fas fa-users fa-2x text-primary mb-2"></i>
+                        <h5>총 참가자</h5>
+                        <h3 class="text-primary">{{ scoreboard|length }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 bg-light">
+                    <div class="card-body">
+                        <i class="fas fa-star fa-2x text-warning mb-2"></i>
+                        <h5>최고 점수</h5>
+                        <h3 class="text-warning">{{ scoreboard[0].score if scoreboard else 0 }}점</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 bg-light">
+                    <div class="card-body">
+                        <i class="fas fa-calculator fa-2x text-success mb-2"></i>
+                        <h5>평균 점수</h5>
+                        <h3 class="text-success">
+                            {% if scoreboard %}
+                                {{ "%.1f"|format((scoreboard|sum(attribute='score')) / scoreboard|length) }}점
+                            {% else %}
+                                0점
+                            {% endif %}
+                        </h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 bg-light">
+                    <div class="card-body">
+                        <i class="fas fa-check-circle fa-2x text-info mb-2"></i>
+                        <h5>총 해결 수</h5>
+                        <h3 class="text-info">{{ scoreboard|sum(attribute='solved_count') }}개</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row mt-4">
+    <div class="col-12 text-center">
+        <a href="{{ url_for('index') }}" class="btn btn-primary">
+            <i class="fas fa-arrow-left"></i> 문제로 돌아가기
+        </a>
+    </div>
+</div>
+{% endblock %}

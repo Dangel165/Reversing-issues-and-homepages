@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}프로필 - Dangel Reversing{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="text-center mb-4">
+            <i class="fas fa-user-circle"></i> 내 프로필
+        </h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="fas fa-user-circle fa-5x text-primary mb-3"></i>
+                <h4>{{ user.username }}</h4>
+                <hr>
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h5 class="text-primary">{{ user.score }}</h5>
+                        <small class="text-muted">총 점수</small>
+                    </div>
+                    <div class="col-6">
+                        <h5 class="text-success">{{ submissions|length }}</h5>
+                        <small class="text-muted">해결한 문제</small>
+                    </div>
+                </div>
+                <hr>
+                <div class="text-muted">
+                    <small>
+                        <i class="fas fa-calendar"></i> 가입일: {{ user.created_at.strftime('%Y-%m-%d') }}<br>
+                        <i class="fas fa-clock"></i> 최근 로그인: 
+                        {% if user.last_login %}
+                            {{ user.last_login.strftime('%Y-%m-%d %H:%M') }}
+                        {% else %}
+                            처음 로그인
+                        {% endif %}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-trophy"></i> 해결한 문제 목록
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if submissions %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>문제</th>
+                                    <th class="text-center">난이도</th>
+                                    <th class="text-center">점수</th>
+                                    <th class="text-center">해결 시간</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for submission in submissions %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ submission.problem.title }}</strong>
+                                        <br>
+                                        <small class="text-muted">{{ submission.problem.description }}</small>
+                                    </td>
+                                    <td class="text-center">
+                                        {% if submission.problem.category == 'easy' %}
+                                            <span class="badge bg-success">Easy</span>
+                                        {% elif submission.problem.category == 'medium' %}
+                                            <span class="badge bg-warning">Medium</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Hard</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-primary">+{{ submission.points_earned }}점</span>
+                                    </td>
+                                    <td class="text-center text-muted">
+                                        <small>{{ submission.submitted_at.strftime('%m-%d %H:%M') }}</small>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-puzzle-piece fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">아직 해결한 문제가 없습니다</h5>
+                        <p class="text-muted">첫 번째 문제를 해결해보세요!</p>
+                        <a href="{{ url_for('index') }}" class="btn btn-primary">
+                            <i class="fas fa-play"></i> 문제 풀러가기
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12 text-center">
+        <a href="{{ url_for('index') }}" class="btn btn-primary me-2">
+            <i class="fas fa-arrow-left"></i> 문제로 돌아가기
+        </a>
+        <a href="{{ url_for('scoreboard') }}" class="btn btn-outline-primary">
+            <i class="fas fa-trophy"></i> 스코어보드 보기
+        </a>
+    </div>
+</div>
+{% endblock %}
